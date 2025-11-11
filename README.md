@@ -1,42 +1,59 @@
 # Chroma – Modal Temperament Designer
 
-Chroma is a single-page React application for designing modal temperaments and producing the cent offsets needed to retune standard MIDI instruments. The current scaffold provides a clean starting point with TypeScript, ESLint, and a Docker-based development environment.
+Chroma is a pure frontend React + TypeScript application for sketching modal temperaments and exporting retuning data for MIDI instruments. Version 1.0 ships with interval authoring, octave-normalised pitch mapping, drag-and-drop editing, and automated autofill from interval definitions.
 
-## Prerequisites
+## Features
+
+- **Interval workspace** – define arbitrarily complex expressions per interval, with live evaluation, octave normalisation, disable toggles, and drag-and-drop ordering.
+- **Autofill engine** – collapse interval data into a 12-note pitch lattice while deduplicating, prioritising closest octave matches, and respecting locked tonic rows.
+- **Pitch table** – inspect target vs. standard frequencies, cent offsets, and per-note expressions; edit descriptions and expressions inline; reset rows individually or via autofill.
+- **Config ribbon** – change concert pitch or key frequency, set the display range, and swap reference anchors (Concert A vs. key frequency) with live recalculation.
+- **Modern tooling** – Vite bundler, ESLint, TypeScript, and optional Docker workflow for reproducible dev environments.
+
+## Getting Started
+
+### Prerequisites
 
 - Node.js ≥ 18.20 (20.x or 22.x recommended)
 - npm ≥ 9
 - Docker & Docker Compose (optional, for containerised development)
 
-## Local Development
+### Local Development
 
 ```bash
 npm install
 npm run dev
 ```
 
-The Vite dev server runs on `http://localhost:5173/`. Edit files in `src/` and the page will hot-reload.
+Visit `http://localhost:5173/` to interact with the app. File changes inside `src/` enable hot reloading.
 
-### Quality tools
+### Quality & Build
 
-- `npm run lint` – static analysis with ESLint
-- `npm run build` – type-check and bundle the application
+- `npm run lint` – static analysis via ESLint
+- `npm run build` – type-check and produce the production bundle (`dist/`)
 
-## Docker Dev Environment
+### Docker Dev Environment (optional)
 
-1. Build and start the container:
+```bash
+docker compose up --build
+```
 
-   ```bash
-   docker compose up --build
-   ```
+Browser sync runs at `http://localhost:5173/`. Stop with `Ctrl+C` or `docker compose down`.
 
-2. Visit `http://localhost:5173/`. Source changes on the host are mounted into the container, and the dev server restarts automatically.
+## Deployment
 
-To stop the environment, press `Ctrl+C` in the compose session or run `docker compose down`.
+Production assets are emitted to `dist/`. Use the provided `build-prod.bat` (Windows) or the Vite CLI directly:
 
-## Project structure
+```bash
+npm run build
+```
 
-- `src/` – application entry point (`main.tsx`) and UI components (`App.tsx`, styles, assets)
-- `public/` – static assets copied as-is to the served build
-- `Dockerfile`, `docker-compose.yml` – container-based dev workflows
-- `tsconfig*.json` – TypeScript project references for tooling and bundling
+Serve `dist/` behind any static host (Vite preview, Nginx, S3, Netlify, etc.).
+
+## Project Structure
+
+- `src/` – React entry (`main.tsx`) plus UI (`App.tsx`), styles, and assets
+- `public/` – static files copied as-is
+- `Dockerfile`, `docker-compose.yml` – container setup for development
+- `tsconfig*.json` – TypeScript project references
+- `build-prod.bat` – helper script to produce a fresh `dist/` bundle on Windows
