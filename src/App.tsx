@@ -21,6 +21,7 @@ const BLACK_KEY_STEPS = new Set([1, 3, 6, 8, 10])
 const MIN_KEY_NOTE = 69 // A4
 const MAX_KEY_NOTE = 80 // G#5 / Ab5
 const TOTAL_PITCHES = 12
+const OCTAVE_EPSILON = 1e-6
 
 type ReferenceMode = 'concertA' | 'keyFrequency'
 
@@ -197,6 +198,110 @@ function App() {
       activationConstraint: { distance: 6 },
     }),
   )
+
+  const handleAutofill = () => {
+    if (computedIntervals.length === 0) {
+      setPitches((prev) =>
+        prev.map((pitch, index) => ({
+          ...pitch,
+          description: '',
+          expression: pitch.locked ? '1' : getDefaultExpression(index),
+        })),
+      )
+      return
+    }
+
+    const resetPitches = pitches.map((pitch, index) => ({
+      ...pitch,
+      description: '',
+      expression: pitch.locked ? '1' : getDefaultExpression(index),
+    }))
+
+    const pitchSlots = resetPitches.map((pitch, index) => {
+      if (pitch.locked) {
+        return {
+          index,
+          locked: true,
+          normalized: 1,
+        }
+      }
+
+      const { value } = resolveExpression(pitch.expression)
+      const normalized = normalizeToOctave(value)
+
+      return {
+        index,
+        locked: false,
+        normalized,
+      }
+    })
+
+    const candidates = computedIntervals
+      .filter((interval) => !interval.disabled)
+      .filter((interval) => interval.normalized !== null)
+      .filter(
+        (interval) =>
+          interval.normalized !== null &&
+          Math.abs(interval.normalized - 1) > OCTAVE_EPSILON &&
+          Math.abs(interval.normalized - 2) > OCTAVE_EPSILON,
+      )
+
+    const unique: typeof candidates = []
+    candidates.forEach((candidate) => {
+      if (
+        !unique.some(
+          (existing) =>
+            existing.normalized !== null &&
+            candidate.normalized !== null &&
+            Math.abs(existing.normalized - candidate.normalized) < OCTAVE_EPSILON,
+        )
+      ) {
+        unique.push(candidate)
+      }
+    })
+
+    unique.sort((a, b) => {
+      if (a.normalized === null || b.normalized === null) {
+        return 0
+      }
+      return a.normalized - b.normalized
+    })
+
+    const selected = unique.slice(0, 11)
+    const assigned = new Set<number>()
+
+    selected.forEach((interval) => {
+      if (interval.normalized === null) {
+        return
+      }
+
+      let bestIndex: number | null = null
+      let bestDelta = Number.POSITIVE_INFINITY
+
+      pitchSlots.forEach((slot) => {
+        if (slot.locked || slot.normalized === null || assigned.has(slot.index)) {
+          return
+        }
+
+        const delta = Math.abs(slot.normalized - interval.normalized!)
+        if (delta < bestDelta) {
+          bestDelta = delta
+          bestIndex = slot.index
+        }
+      })
+
+      if (bestIndex !== null) {
+        resetPitches[bestIndex] = {
+          ...resetPitches[bestIndex],
+          description: interval.description,
+          expression: interval.expression,
+        }
+        assigned.add(bestIndex)
+      }
+    })
+
+    setPitches(resetPitches)
+  }
 
   const computedIntervals: IntervalDefinitionWithComputed[] = useMemo(
     () =>
@@ -451,7 +556,7 @@ function App() {
             <button type="button" className="btn" onClick={handleAddInterval}>
               Add interval
             </button>
-            <button type="button" className="btn secondary" disabled title="Coming soon">
+            <button type="button" className="btn secondary" onClick={handleAutofill}>
               Autofill
             </button>
           </div>
@@ -582,14 +687,6 @@ function App() {
             </div>
           </SortableContext>
         </DndContext>
-      </section>
-
-      <section className="callout">
-        <h2>Next steps</h2>
-        <p>
-          Extend this tool with cent offset calculations, temperament visualisations, and export
-          helpers for tuning tables, CSV, Scala, or SysEx messages.
-        </p>
       </section>
     </div>
   )

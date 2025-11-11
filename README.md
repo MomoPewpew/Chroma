@@ -40,9 +40,3 @@ To stop the environment, press `Ctrl+C` in the compose session or run `docker co
 - `public/` – static assets copied as-is to the served build
 - `Dockerfile`, `docker-compose.yml` – container-based dev workflows
 - `tsconfig*.json` – TypeScript project references for tooling and bundling
-
-## Next steps
-
-- Model temperament inputs (interval ratios, mode definitions)
-- Implement MIDI cent offset calculations
-- Provide export options (CSV, Scala files, SysEx dumps)
