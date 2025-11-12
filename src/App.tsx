@@ -523,8 +523,7 @@ function App() {
       <header className="hero">
         <h1>Chroma</h1>
         <p>
-          Design modal temperaments and calculate the exact cent offsets needed to retune MIDI
-          instruments.
+          Sketch modal temperaments, audition interval sets, and export tunings for your MIDI rigs.
         </p>
       </header>
 
