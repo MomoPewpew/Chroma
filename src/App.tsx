@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   DndContext,
   PointerSensor,
@@ -22,6 +22,27 @@ const MIN_KEY_NOTE = 69 // A4
 const MAX_KEY_NOTE = 80 // G#5 / Ab5
 const TOTAL_PITCHES = 12
 const OCTAVE_EPSILON = 1e-6
+
+type Theme = 'light' | 'dark'
+
+const THEME_STORAGE_KEY = 'chroma:theme'
+
+const getPreferredTheme = (): Theme => {
+  if (typeof window === 'undefined') {
+    return 'light'
+  }
+
+  const stored = window.localStorage.getItem(THEME_STORAGE_KEY)
+  if (stored === 'light' || stored === 'dark') {
+    return stored
+  }
+
+  if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+    return 'dark'
+  }
+
+  return 'light'
+}
 
 type IntervalDefinition = {
   id: string
@@ -173,6 +194,13 @@ const getDefaultPitchDefinitions = () =>
   )
 
 function App() {
+  const [theme, setTheme] = useState<Theme>(() => {
+    const preferred = getPreferredTheme()
+    if (typeof document !== 'undefined') {
+      document.documentElement.dataset.theme = preferred
+    }
+    return preferred
+  })
   const [intervals, setIntervals] = useState<IntervalDefinition[]>([
     createIntervalDefinition({ description: 'Tonic', expression: '1' }),
     createIntervalDefinition({ description: 'Perfect fifth', expression: '3/2' }),
@@ -183,6 +211,17 @@ function App() {
     deriveBaseFrequency(440, 72),
   )
   const [pitches, setPitches] = useState<PitchDefinition[]>(() => getDefaultPitchDefinitions())
+
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      document.documentElement.dataset.theme = theme
+    }
+    try {
+      window.localStorage.setItem(THEME_STORAGE_KEY, theme)
+    } catch {
+      // no-op: storage might be unavailable
+    }
+  }, [theme])
 
   const intervalSensors = useSensors(
     useSensor(PointerSensor, {
@@ -195,6 +234,13 @@ function App() {
       activationConstraint: { distance: 6 },
     }),
   )
+
+  const isDarkTheme = theme === 'dark'
+  const themeToggleLabel = isDarkTheme ? 'Switch to light mode' : 'Switch to dark mode'
+
+  const handleToggleTheme = () => {
+    setTheme((prev) => (prev === 'light' ? 'dark' : 'light'))
+  }
 
   const handleAutofill = () => {
     if (computedIntervals.length === 0) {
@@ -522,6 +568,20 @@ function App() {
 
   return (
     <div className="app-shell">
+      <div className="app-toolbar">
+        <button
+          type="button"
+          className="theme-toggle"
+          onClick={handleToggleTheme}
+          aria-pressed={isDarkTheme}
+          title={themeToggleLabel}
+        >
+          <span className="theme-toggle__icon" aria-hidden="true">
+            {isDarkTheme ? '🌙' : '☀️'}
+          </span>
+          <span className="theme-toggle__label">{isDarkTheme ? 'Dark' : 'Light'} mode</span>
+        </button>
+      </div>
       <header className="hero">
         <h1>Chroma</h1>
         <p>
