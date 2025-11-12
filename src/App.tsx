@@ -23,8 +23,6 @@ const MAX_KEY_NOTE = 80 // G#5 / Ab5
 const TOTAL_PITCHES = 12
 const OCTAVE_EPSILON = 1e-6
 
-type ReferenceMode = 'concertA' | 'keyFrequency'
-
 type IntervalDefinition = {
   id: string
   description: string
@@ -181,7 +179,6 @@ function App() {
   ])
   const [keyRoot, setKeyRoot] = useState<number>(72)
   const [concertPitch, setConcertPitch] = useState<number>(440)
-  const [referenceMode, setReferenceMode] = useState<ReferenceMode>('concertA')
   const [keyFrequency, setKeyFrequency] = useState<number>(() =>
     deriveBaseFrequency(440, 72),
   )
@@ -319,12 +316,11 @@ function App() {
   )
 
   const baseFrequency = useMemo(() => {
-    const derived = deriveBaseFrequency(concertPitch, keyRoot)
-    if (referenceMode === 'keyFrequency') {
-      return keyFrequency > 0 ? keyFrequency : derived
+    if (Number.isFinite(keyFrequency) && keyFrequency > 0) {
+      return keyFrequency
     }
-    return derived
-  }, [concertPitch, keyFrequency, keyRoot, referenceMode])
+    return deriveBaseFrequency(concertPitch, keyRoot)
+  }, [keyFrequency, concertPitch, keyRoot])
 
   const computedPitches: PitchWithComputed[] = useMemo(
     () =>
@@ -416,15 +412,6 @@ function App() {
     const numeric = Number(value)
     if (!Number.isNaN(numeric) && numeric > 0) {
       syncFromKeyFrequency(numeric, keyRoot)
-    }
-  }
-
-  const handleReferenceModeChange = (mode: ReferenceMode) => {
-    setReferenceMode(mode)
-    if (mode === 'keyFrequency') {
-      syncFromKeyFrequency(baseFrequency, keyRoot)
-    } else {
-      syncFromConcertPitch(concertPitch, keyRoot)
     }
   }
 
@@ -544,7 +531,7 @@ function App() {
 
       <section className="interval-tool">
         <div className="interval-tool__header">
-          <div>
+      <div>
             <h2>Intervals</h2>
             <p>
               Define modal intervals as expressions relative to the tonic. The resolved value and
@@ -593,18 +580,6 @@ function App() {
         </div>
 
         <div className="pitch-config__field">
-          <label htmlFor="reference-mode">Reference</label>
-          <select
-            id="reference-mode"
-            value={referenceMode}
-            onChange={(event) => handleReferenceModeChange(event.target.value as ReferenceMode)}
-          >
-            <option value="concertA">Concert A (MIDI 69)</option>
-            <option value="keyFrequency">Key note frequency</option>
-          </select>
-        </div>
-
-        <div className="pitch-config__field">
           <label htmlFor="concert-pitch">Concert pitch A</label>
           <div className="pitch-config__input">
             <input
@@ -615,7 +590,6 @@ function App() {
               step={0.1}
               value={concertPitch}
               onChange={(event) => handleConcertPitchChange(event.target.value)}
-              disabled={referenceMode !== 'concertA'}
             />
             <span>Hz</span>
           </div>
@@ -632,7 +606,6 @@ function App() {
               step={0.01}
               value={Number.isFinite(keyFrequency) ? keyFrequency : ''}
               onChange={(event) => handleKeyFrequencyChange(event.target.value)}
-              disabled={referenceMode !== 'keyFrequency'}
             />
             <span>Hz</span>
           </div>
