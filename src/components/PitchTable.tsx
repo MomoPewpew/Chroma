@@ -95,6 +95,14 @@ const SortablePitchRow = ({ pitch, onChange, onReset }: PitchRowProps) => {
         {...listeners}
         disabled={pitch.locked}
       >
+        <span className="pitch-row__indicator-dots" aria-hidden="true">
+          <span />
+          <span />
+          <span />
+          <span />
+          <span />
+          <span />
+        </span>
         <span className="sr-only">Drag handle</span>
       </button>
 
