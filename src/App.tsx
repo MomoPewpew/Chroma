@@ -670,13 +670,6 @@ function App() {
             <span>Hz</span>
           </div>
         </div>
-
-        <div className="pitch-config__summary">
-          <span>
-            Range: {rangeStartName} (MIDI {keyRoot}) – {rangeEndName} (MIDI{' '}
-            {keyRoot + TOTAL_PITCHES - 1})
-          </span>
-        </div>
       </section>
 
       <section className="pitch-panel">
