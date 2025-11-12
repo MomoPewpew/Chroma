@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react'
 import {
   PointerSensor,
   useSensor,
@@ -35,6 +35,11 @@ import {
   persistTheme,
   type Theme,
 } from './lib/theme'
+import {
+  deserializeTemperament,
+  serializeTemperament,
+  type LoadedTemperament,
+} from './lib/temperament'
 import './App.css'
 
 function App() {
@@ -51,12 +56,26 @@ function App() {
   ])
   const [temperamentTitle, setTemperamentTitle] = useState<string>('')
   const [temperamentDescription, setTemperamentDescription] = useState<string>('')
+  const [exportFormat, setExportFormat] = useState<'json'>('json')
+  const [exampleQuery, setExampleQuery] = useState<string>('')
+  const [loadedExampleId, setLoadedExampleId] = useState<string | null>(null)
   const [keyRoot, setKeyRoot] = useState<number>(72)
   const [concertPitch, setConcertPitch] = useState<number>(440)
   const [keyFrequency, setKeyFrequency] = useState<number>(() =>
     deriveBaseFrequency(440, 72),
   )
   const [pitches, setPitches] = useState<PitchDefinition[]>(() => getDefaultPitchDefinitions())
+
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
+
+  const exampleOptions = useMemo(
+    () => [
+      { value: 'just-intonation', label: 'Just Intonation in C' },
+      { value: 'pythagorean', label: 'Pythagorean Cycle' },
+      { value: 'meantone-1-4', label: 'Quarter-comma Meantone' },
+    ],
+    [],
+  )
 
   useEffect(() => {
     if (typeof document !== 'undefined') {
@@ -83,6 +102,98 @@ function App() {
 
   const handleToggleTheme = () => {
     setTheme((prev) => (prev === 'light' ? 'dark' : 'light'))
+  }
+
+  const applyLoadedTemperament = (loaded: LoadedTemperament) => {
+    setTemperamentTitle(loaded.metadata.title ?? '')
+    setTemperamentDescription(loaded.metadata.description ?? '')
+    setIntervals(loaded.intervals)
+    setPitches(loaded.pitches)
+    setKeyRoot(loaded.config.keyRoot)
+    setConcertPitch(loaded.config.concertPitch)
+    setKeyFrequency(loaded.config.keyFrequency)
+  }
+
+  const handleExportTemperament = () => {
+    const payload = serializeTemperament({
+      metadata: { title: temperamentTitle, description: temperamentDescription },
+      config: { keyRoot, concertPitch, keyFrequency },
+      intervals,
+      pitches,
+    })
+
+    const baseName =
+      temperamentTitle.trim() ||
+      (loadedExampleId ? loadedExampleId.replace(/_/g, '-') : '') ||
+      'temperament'
+    const safeBase = baseName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+    const fileName = `${safeBase || 'temperament'}.${exportFormat}`
+
+    const blob = new Blob([payload], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const anchor = document.createElement('a')
+    anchor.href = url
+    anchor.download = fileName
+    anchor.click()
+    URL.revokeObjectURL(url)
+  }
+
+  const handleImportClick = () => {
+    fileInputRef.current?.click()
+  }
+
+  const handleImportFromFile = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) {
+      return
+    }
+
+    try {
+      const text = await file.text()
+      const loaded = deserializeTemperament(text)
+      applyLoadedTemperament(loaded)
+      setExampleQuery(loaded.metadata.title ?? '')
+      setLoadedExampleId(null)
+    } catch (error) {
+      console.error(error)
+      alert(`Unable to import temperament: ${(error as Error).message}`)
+    } finally {
+      event.target.value = ''
+    }
+  }
+
+  const loadExampleTemperament = async (exampleId: string) => {
+    try {
+      const response = await fetch(`/examples/${exampleId}.json`)
+      if (!response.ok) {
+        throw new Error('Request failed')
+      }
+      const text = await response.text()
+      const loaded = deserializeTemperament(text)
+      applyLoadedTemperament(loaded)
+      const option = exampleOptions.find((item) => item.value === exampleId)
+      if (option) {
+        setExampleQuery(option.label)
+      }
+      setLoadedExampleId(exampleId)
+    } catch (error) {
+      console.error(error)
+      alert('Unable to load the selected example temperament.')
+    }
+  }
+
+  const handleExampleQueryChange = (query: string) => {
+    setExampleQuery(query)
+    const trimmed = query.trim().toLowerCase()
+    if (!trimmed) {
+      return
+    }
+    const match =
+      exampleOptions.find((option) => option.label.toLowerCase() === trimmed) ??
+      exampleOptions.find((option) => option.value.toLowerCase() === trimmed)
+    if (match) {
+      void loadExampleTemperament(match.value)
+    }
   }
 
   const computedIntervals: IntervalDefinitionWithComputed[] = useMemo(
@@ -422,6 +533,20 @@ function App() {
         description={temperamentDescription}
         onTitleChange={setTemperamentTitle}
         onDescriptionChange={setTemperamentDescription}
+        format={exportFormat}
+        onFormatChange={setExportFormat}
+        onImport={handleImportClick}
+        onExport={handleExportTemperament}
+        exampleQuery={exampleQuery}
+        onExampleQueryChange={handleExampleQueryChange}
+        exampleOptions={exampleOptions}
+      />
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="application/json"
+        style={{ display: 'none' }}
+        onChange={handleImportFromFile}
       />
 
       <IntervalWorkspace
@@ -455,7 +580,7 @@ function App() {
       />
 
       <AppFooter />
-    </div>
+      </div>
   )
 }
 

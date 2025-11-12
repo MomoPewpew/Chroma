@@ -3,15 +3,29 @@ import { useEffect, useRef } from 'react'
 type TemperamentMetaProps = {
   title: string
   description: string
+  format: 'json'
   onTitleChange: (value: string) => void
   onDescriptionChange: (value: string) => void
+  onImport: () => void
+  onExport: () => void
+  onFormatChange: (value: 'json') => void
+  exampleQuery: string
+  onExampleQueryChange: (value: string) => void
+  exampleOptions: Array<{ value: string; label: string }>
 }
 
 const TemperamentMeta = ({
   title,
   description,
+  format,
   onTitleChange,
   onDescriptionChange,
+  onImport,
+  onExport,
+  onFormatChange,
+  exampleQuery,
+  onExampleQueryChange,
+  exampleOptions,
 }: TemperamentMetaProps) => {
   const descriptionRef = useRef<HTMLTextAreaElement | null>(null)
 
@@ -42,6 +56,46 @@ const TemperamentMeta = ({
           value={description}
           onChange={(event) => onDescriptionChange(event.target.value)}
         />
+      </div>
+      <div className="temperament-meta__actions">
+        <div className="temperament-meta__import">
+          <button type="button" className="btn secondary" onClick={onImport}>
+            Import temperament
+          </button>
+          <div className="temperament-meta__examples">
+            <label htmlFor="temperament-examples-input" className="sr-only">
+              Load an example temperament
+            </label>
+            <input
+              id="temperament-examples-input"
+              type="search"
+              list="temperament-examples"
+              placeholder="Browse examples…"
+              value={exampleQuery}
+              onChange={(event) => onExampleQueryChange(event.target.value)}
+            />
+            <datalist id="temperament-examples">
+              {exampleOptions.map((option) => (
+                <option key={option.value} value={option.label} />
+              ))}
+            </datalist>
+          </div>
+        </div>
+        <div className="temperament-meta__export">
+          <label htmlFor="export-format">Export as</label>
+          <div className="temperament-meta__export-controls">
+            <select
+              id="export-format"
+              value={format}
+              onChange={(event) => onFormatChange(event.target.value as 'json')}
+            >
+              <option value="json">JSON</option>
+            </select>
+            <button type="button" className="btn" onClick={onExport}>
+              Export
+            </button>
+          </div>
+        </div>
       </div>
     </section>
   )

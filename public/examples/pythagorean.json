@@ -1,0 +1,32 @@
+{
+  "schema": "chroma-temperament",
+  "version": 1,
+  "metadata": {
+    "title": "Pythagorean Cycle",
+    "description": "Twelve-tone circle of fifths built on C5 with pure 3/2 ratios."
+  },
+  "config": {
+    "keyRoot": 72,
+    "concertPitch": 440,
+    "keyFrequency": 523.251
+  },
+  "intervals": [
+    { "description": "Tonic", "expression": "1", "disabled": false },
+    { "description": "Perfect fifth", "expression": "3/2", "disabled": false }
+  ],
+  "pitches": [
+    { "description": "C", "expression": "1" },
+    { "description": "G", "expression": "3/2" },
+    { "description": "D", "expression": "(3/2)^2" },
+    { "description": "A", "expression": "(3/2)^3" },
+    { "description": "E", "expression": "(3/2)^4" },
+    { "description": "B", "expression": "(3/2)^5" },
+    { "description": "F♯", "expression": "(3/2)^6" },
+    { "description": "C♯", "expression": "(3/2)^7" },
+    { "description": "G♯", "expression": "(3/2)^8" },
+    { "description": "D♯", "expression": "(3/2)^9" },
+    { "description": "A♯", "expression": "(3/2)^10" },
+    { "description": "F", "expression": "(3/2)^11" }
+  ]
+}
+
