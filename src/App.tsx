@@ -1,197 +1,40 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
-  DndContext,
   PointerSensor,
   useSensor,
   useSensors,
   type DragEndEvent,
 } from '@dnd-kit/core'
+import { arrayMove } from '@dnd-kit/sortable'
+import ThemeToggle from './components/ThemeToggle'
+import IntervalWorkspace from './components/IntervalWorkspace'
+import PitchConfig, { type KeyOption } from './components/PitchConfig'
+import PitchTable from './components/PitchTable'
+import AppFooter from './components/AppFooter'
 import {
-  SortableContext,
-  verticalListSortingStrategy,
-  useSortable,
-  arrayMove,
-} from '@dnd-kit/sortable'
-import { CSS } from '@dnd-kit/utilities'
-import { evaluate } from 'mathjs'
+  MAX_KEY_NOTE,
+  MIN_KEY_NOTE,
+  OCTAVE_EPSILON,
+  TOTAL_PITCHES,
+  createIntervalDefinition,
+  deriveBaseFrequency,
+  getDefaultExpression,
+  getDefaultPitchDefinitions,
+  getNoteName,
+  isBlackKey,
+  normalizeToOctave,
+  resolveExpression,
+  type IntervalDefinition,
+  type IntervalDefinitionWithComputed,
+  type PitchDefinition,
+  type PitchWithComputed,
+} from './lib/music'
+import {
+  getPreferredTheme,
+  persistTheme,
+  type Theme,
+} from './lib/theme'
 import './App.css'
-
-const NOTE_NAMES = ['C', 'C♯', 'D', 'D♯', 'E', 'F', 'F♯', 'G', 'G♯', 'A', 'A♯', 'B'] as const
-const BLACK_KEY_STEPS = new Set([1, 3, 6, 8, 10])
-const MIN_KEY_NOTE = 69 // A4
-const MAX_KEY_NOTE = 80 // G#5 / Ab5
-const TOTAL_PITCHES = 12
-const OCTAVE_EPSILON = 1e-6
-
-type Theme = 'light' | 'dark'
-
-const THEME_STORAGE_KEY = 'chroma:theme'
-
-const getPreferredTheme = (): Theme => {
-  if (typeof window === 'undefined') {
-    return 'light'
-  }
-
-  const stored = window.localStorage.getItem(THEME_STORAGE_KEY)
-  if (stored === 'light' || stored === 'dark') {
-    return stored
-  }
-
-  if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-    return 'dark'
-  }
-
-  return 'light'
-}
-
-type IntervalDefinition = {
-  id: string
-  description: string
-  expression: string
-  disabled: boolean
-}
-
-type IntervalDefinitionWithComputed = IntervalDefinition & {
-  resolved: number | null
-  normalized: number | null
-  error: string | null
-}
-
-type PitchDefinition = {
-  id: string
-  description: string
-  expression: string
-  locked: boolean
-}
-
-type PitchWithComputed = PitchDefinition & {
-  position: number
-  midiNote: number
-  noteName: string
-  isBlackKey: boolean
-  resolved: number | null
-  normalized: number | null
-  error: string | null
-  targetFrequency: number | null
-  standardFrequency: number
-  centsOffset: number | null
-  defaultExpression: string
-}
-
-const createIntervalDefinition = (
-  defaults?: Partial<IntervalDefinition>,
-): IntervalDefinition => ({
-  id: crypto.randomUUID(),
-  description: '',
-  expression: '',
-  disabled: false,
-  ...defaults,
-})
-
-const createPitchDefinition = (defaults?: Partial<PitchDefinition>): PitchDefinition => ({
-  id: crypto.randomUUID(),
-  description: '',
-  expression: '',
-  locked: false,
-  ...defaults,
-})
-
-const deriveBaseFrequency = (concertPitch: number, midiNote: number) =>
-  concertPitch * Math.pow(2, (midiNote - 69) / 12)
-
-const getDefaultExpression = (index: number): string => {
-  if (index === 0) {
-    return '1'
-  }
-
-  return `2^(${index}/12)`
-}
-
-const normalizeToOctave = (value: number | null): number | null => {
-  if (!Number.isFinite(value ?? NaN) || value === null || value <= 0) {
-    return null
-  }
-
-  let normalized = value
-
-  while (normalized < 1) {
-    normalized *= 2
-  }
-
-  while (normalized > 2) {
-    normalized /= 2
-  }
-
-  return normalized
-}
-
-const resolveExpression = (expression: string): { value: number | null; error: string | null } => {
-  const trimmed = expression.trim()
-
-  if (!trimmed) {
-    return { value: null, error: null }
-  }
-
-  try {
-    const evaluated = evaluate(trimmed)
-    const numeric = typeof evaluated === 'number' ? evaluated : Number(evaluated)
-
-    if (!Number.isFinite(numeric)) {
-      return { value: null, error: 'Result is not a finite number' }
-    }
-
-    return { value: numeric, error: null }
-  } catch {
-    return { value: null, error: 'Unable to parse expression' }
-  }
-}
-
-const formatNumber = (value: number | null): string => {
-  if (value === null) {
-    return '—'
-  }
-
-  return new Intl.NumberFormat('en-US', {
-    maximumFractionDigits: Math.abs(value) >= 100 ? 4 : 6,
-    useGrouping: false,
-  }).format(value)
-}
-
-const formatFrequency = (value: number | null): string => {
-  if (value === null) {
-    return '—'
-  }
-
-  return new Intl.NumberFormat('en-US', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 4,
-  }).format(value)
-}
-
-const formatCents = (value: number | null): string => {
-  if (value === null) {
-    return '—'
-  }
-
-  const formatted = value.toFixed(2)
-  return value > 0 ? `+${formatted}` : formatted
-}
-
-const getNoteName = (midiNote: number): string => {
-  const step = ((midiNote % 12) + 12) % 12
-  const octave = Math.floor(midiNote / 12) - 1
-  return `${NOTE_NAMES[step]}${octave}`
-}
-
-const isBlackKey = (midiNote: number): boolean => BLACK_KEY_STEPS.has(((midiNote % 12) + 12) % 12)
-
-const getDefaultPitchDefinitions = () =>
-  Array.from({ length: TOTAL_PITCHES }, (_, index) =>
-    createPitchDefinition({
-      expression: index === 0 ? '1' : `2^(${index}/12)`,
-      locked: index === 0,
-    }),
-  )
 
 function App() {
   const [theme, setTheme] = useState<Theme>(() => {
@@ -216,10 +59,8 @@ function App() {
     if (typeof document !== 'undefined') {
       document.documentElement.dataset.theme = theme
     }
-    try {
-      window.localStorage.setItem(THEME_STORAGE_KEY, theme)
-    } catch {
-      // no-op: storage might be unavailable
+    if (typeof window !== 'undefined') {
+      persistTheme(theme)
     }
   }, [theme])
 
@@ -236,11 +77,25 @@ function App() {
   )
 
   const isDarkTheme = theme === 'dark'
-  const themeToggleLabel = isDarkTheme ? 'Switch to light mode' : 'Switch to dark mode'
 
   const handleToggleTheme = () => {
     setTheme((prev) => (prev === 'light' ? 'dark' : 'light'))
   }
+
+  const computedIntervals: IntervalDefinitionWithComputed[] = useMemo(
+    () =>
+      intervals.map((interval) => {
+        const { value, error } = resolveExpression(interval.expression)
+        const normalized = normalizeToOctave(value)
+        return {
+          ...interval,
+          resolved: value,
+          normalized,
+          error,
+        }
+      }),
+    [intervals],
+  )
 
   const handleAutofill = () => {
     if (computedIntervals.length === 0) {
@@ -345,21 +200,6 @@ function App() {
 
     setPitches(resetPitches)
   }
-
-  const computedIntervals: IntervalDefinitionWithComputed[] = useMemo(
-    () =>
-      intervals.map((interval) => {
-        const { value, error } = resolveExpression(interval.expression)
-        const normalized = normalizeToOctave(value)
-        return {
-          ...interval,
-          resolved: value,
-          normalized,
-          error,
-        }
-      }),
-    [intervals],
-  )
 
   const baseFrequency = useMemo(() => {
     if (Number.isFinite(keyFrequency) && keyFrequency > 0) {
@@ -470,7 +310,7 @@ function App() {
     }
   }
 
-  const keyOptions = useMemo(
+  const keyOptions = useMemo<KeyOption[]>(
     () =>
       Array.from({ length: MAX_KEY_NOTE - MIN_KEY_NOTE + 1 }, (_, index) => {
         const midiNote = MIN_KEY_NOTE + index
@@ -482,8 +322,10 @@ function App() {
     [],
   )
 
-  const rangeStartName = getNoteName(keyRoot)
-  const rangeEndName = getNoteName(keyRoot + TOTAL_PITCHES - 1)
+  const rangeStartLabel = `${getNoteName(keyRoot)} (MIDI ${keyRoot})`
+  const rangeEndLabel = `${getNoteName(keyRoot + TOTAL_PITCHES - 1)} (MIDI ${
+    keyRoot + TOTAL_PITCHES - 1
+  })`
 
   const handleIntervalDragEnd = (event: DragEndEvent) => {
     const { active, over } = event
@@ -507,11 +349,7 @@ function App() {
     const activePitch = computedPitches.find((pitch) => pitch.id === active.id)
     const overPitch = computedPitches.find((pitch) => pitch.id === over.id)
 
-    if (!activePitch || !overPitch) {
-      return
-    }
-
-    if (activePitch.locked || overPitch.locked) {
+    if (!activePitch || !overPitch || activePitch.locked || overPitch.locked) {
       return
     }
 
@@ -539,11 +377,7 @@ function App() {
       movableIndices.forEach((idx, orderIdx) => {
         const defaults = reordered[orderIdx]
         next[idx].description = defaults.description
-        if (!next[idx].locked) {
-          next[idx].expression = defaults.expression
-        } else {
-          next[idx].expression = '1'
-        }
+        next[idx].expression = next[idx].locked ? '1' : defaults.expression
       })
 
       return next
@@ -569,365 +403,51 @@ function App() {
   return (
     <div className="app-shell">
       <div className="app-toolbar">
-        <button
-          type="button"
-          className="theme-toggle"
-          onClick={handleToggleTheme}
-          aria-pressed={isDarkTheme}
-          title={themeToggleLabel}
-        >
-          <span className="theme-toggle__icon" aria-hidden="true">
-            {isDarkTheme ? '🌙' : '☀️'}
-          </span>
-          <span className="theme-toggle__label">{isDarkTheme ? 'Dark' : 'Light'} mode</span>
-        </button>
+        <ThemeToggle isDark={isDarkTheme} onToggle={handleToggleTheme} />
       </div>
+
       <header className="hero">
         <h1>Chroma</h1>
         <p>
-          Design modal temperaments and calculate the exact cent offsets needed to retune MIDI instruments.
+          Design modal temperaments and calculate the exact cent offsets needed to retune MIDI
+          instruments.
         </p>
       </header>
 
-      <section className="interval-tool">
-        <div className="interval-tool__header">
-      <div>
-            <h2>Intervals</h2>
-            <p>
-              Define modal intervals as expressions relative to the tonic. The resolved value and
-              octave-normalised ratio update automatically.
-            </p>
-          </div>
-          <div className="interval-tool__actions">
-            <button type="button" className="btn" onClick={handleAddInterval}>
-              Add interval
-            </button>
-            <button type="button" className="btn secondary" onClick={handleAutofill}>
-              Autofill
-            </button>
-          </div>
-        </div>
+      <IntervalWorkspace
+        intervals={computedIntervals}
+        sensors={intervalSensors}
+        onDragEnd={handleIntervalDragEnd}
+        onAddInterval={handleAddInterval}
+        onAutofill={handleAutofill}
+        onChange={handleIntervalChange}
+        onDelete={handleIntervalDelete}
+      />
 
-        <DndContext sensors={intervalSensors} onDragEnd={handleIntervalDragEnd}>
-          <SortableContext
-            items={computedIntervals.map((interval) => interval.id)}
-            strategy={verticalListSortingStrategy}
-          >
-            <div className="interval-list">
-              {computedIntervals.map((interval) => (
-                <SortableIntervalRow
-                  key={interval.id}
-                  interval={interval}
-                  onChange={handleIntervalChange}
-                  onDelete={handleIntervalDelete}
-                />
-              ))}
-            </div>
-          </SortableContext>
-        </DndContext>
-      </section>
+      <PitchConfig
+        keyRoot={keyRoot}
+        concertPitch={concertPitch}
+        keyFrequency={keyFrequency}
+        keyOptions={keyOptions}
+        rangeStartLabel={rangeStartLabel}
+        rangeEndLabel={rangeEndLabel}
+        onKeyChange={handleKeyChange}
+        onConcertPitchChange={handleConcertPitchChange}
+        onKeyFrequencyChange={handleKeyFrequencyChange}
+      />
 
-      <section className="pitch-config">
-        <div className="pitch-config__field">
-          <label htmlFor="key-note">Key</label>
-          <select id="key-note" value={keyRoot} onChange={(event) => handleKeyChange(event.target.value)}>
-            {keyOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </div>
+      <PitchTable
+        pitches={computedPitches}
+        sensors={pitchSensors}
+        onDragEnd={handlePitchDragEnd}
+        onChange={handlePitchChange}
+        onReset={handlePitchReset}
+      />
 
-        <div className="pitch-config__field">
-          <label htmlFor="concert-pitch">Concert pitch A</label>
-          <div className="pitch-config__input">
-            <input
-              id="concert-pitch"
-              type="number"
-              min={300}
-              max={520}
-              step={0.1}
-              value={concertPitch}
-              onChange={(event) => handleConcertPitchChange(event.target.value)}
-            />
-            <span>Hz</span>
-          </div>
-        </div>
-
-        <div className="pitch-config__field">
-          <label htmlFor="key-frequency">Key note frequency</label>
-          <div className="pitch-config__input">
-            <input
-              id="key-frequency"
-              type="number"
-              min={10}
-              max={20000}
-              step={0.01}
-              value={Number.isFinite(keyFrequency) ? keyFrequency : ''}
-              onChange={(event) => handleKeyFrequencyChange(event.target.value)}
-            />
-            <span>Hz</span>
-          </div>
-        </div>
-
-        <div className="pitch-config__summary">
-          <span>
-            Range: {rangeStartName} (MIDI {keyRoot}) – {rangeEndName} (MIDI{' '}
-            {keyRoot + TOTAL_PITCHES - 1})
-          </span>
-        </div>
-      </section>
-
-      <section className="pitch-panel">
-        <header className="pitch-panel__header">
-          <h2>Pitches</h2>
-          <p>
-            Review the twelve semitone positions derived from the selected key. Expressions resolve
-            to target frequencies, contrasted with MIDI standard tuning and cent offsets.
-          </p>
-        </header>
-
-        <DndContext sensors={pitchSensors} onDragEnd={handlePitchDragEnd}>
-          <SortableContext
-            items={computedPitches.map((pitch) => pitch.id)}
-            strategy={verticalListSortingStrategy}
-          >
-            <div className="pitch-table__scroll">
-              <div className="pitch-table">
-                <div className="pitch-table__header-row">
-                  <div className="pitch-table__cell heading">Key</div>
-                  <div className="pitch-table__cell heading">Note</div>
-                  <div className="pitch-table__cell heading">Description</div>
-                  <div className="pitch-table__cell heading">Expression</div>
-                  <div className="pitch-table__cell heading">Resolved</div>
-                  <div className="pitch-table__cell heading">Octave</div>
-                  <div className="pitch-table__cell heading">Target (Hz)</div>
-                  <div className="pitch-table__cell heading">MIDI (Hz)</div>
-                  <div className="pitch-table__cell heading">Detune (¢)</div>
-                  <div className="pitch-table__cell heading">Reset</div>
-                </div>
-                {computedPitches.map((pitch) => (
-                  <SortablePitchRow
-                    key={pitch.id}
-                    pitch={pitch}
-                    onChange={handlePitchChange}
-                    onReset={handlePitchReset}
-                  />
-                ))}
-              </div>
-            </div>
-          </SortableContext>
-        </DndContext>
-      </section>
-
-      <footer className="app-footer">
-        <span className="app-footer__author">Made by Marijn Tepas</span>
-        <a
-          className="app-footer__link"
-          href="https://github.com/MomoPewpew/Chroma/blob/main/LICENSE"
-          target="_blank"
-          rel="noreferrer"
-        >
-          Licensed under GPL-3.0
-        </a>
-        <a
-          className="app-footer__link"
-          href="https://github.com/MomoPewpew/Chroma"
-          target="_blank"
-          rel="noreferrer"
-        >
-          View source on GitHub
-        </a>
-      </footer>
-    </div>
-  )
-}
-
-type IntervalRowProps = {
-  interval: IntervalDefinitionWithComputed
-  onChange: (id: string, patch: Partial<IntervalDefinition>) => void
-  onDelete: (id: string) => void
-}
-
-function SortableIntervalRow({ interval, onChange, onDelete }: IntervalRowProps) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-    id: interval.id,
-  })
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  }
-
-  return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className={`interval-row${isDragging ? ' is-dragging' : ''}`}
-      aria-label="Interval definition row"
-    >
-      <button
-        type="button"
-        className="drag-handle"
-        aria-label="Reorder interval"
-        {...attributes}
-        {...listeners}
-      >
-        ⋮⋮
-      </button>
-
-      <div className="interval-row__field">
-        <label htmlFor={`description-${interval.id}`}>Description</label>
-        <input
-          id={`description-${interval.id}`}
-          type="text"
-          placeholder="e.g. Perfect fifth"
-          value={interval.description}
-          onChange={(event) => onChange(interval.id, { description: event.target.value })}
-        />
-      </div>
-
-      <div className="interval-row__field">
-        <label htmlFor={`expression-${interval.id}`}>Expression</label>
-        <input
-          id={`expression-${interval.id}`}
-          type="text"
-          placeholder="e.g. 3/2"
-          value={interval.expression}
-          onChange={(event) => onChange(interval.id, { expression: event.target.value })}
-        />
-      </div>
-
-      <div className="interval-row__field interval-row__value">
-        <label>Resolved</label>
-        <output
-          title={interval.error ?? (interval.resolved !== null ? String(interval.resolved) : '')}
-        >
-          {interval.error ? 'Error' : formatNumber(interval.resolved)}
-        </output>
-      </div>
-
-      <div className="interval-row__field interval-row__value">
-        <label>Octave</label>
-        <output>
-          {interval.error
-            ? '—'
-            : interval.resolved === null
-            ? '—'
-            : formatNumber(interval.normalized)}
-        </output>
-      </div>
-
-      <div className="interval-row__field interval-row__controls">
-        <label className="checkbox">
-          <input
-            type="checkbox"
-            checked={interval.disabled}
-            onChange={(event) => onChange(interval.id, { disabled: event.target.checked })}
-          />
-          Disable
-        </label>
-        <button
-          type="button"
-          className="btn tertiary"
-          onClick={() => onDelete(interval.id)}
-          aria-label="Delete interval"
-        >
-          Delete
-        </button>
-      </div>
-    </div>
-  )
-}
-
-type PitchRowProps = {
-  pitch: PitchWithComputed
-  onChange: (id: string, patch: Partial<PitchDefinition>) => void
-  onReset: (position: number, defaultExpression: string) => void
-}
-
-function SortablePitchRow({ pitch, onChange, onReset }: PitchRowProps) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-    id: pitch.id,
-    disabled: pitch.locked,
-  })
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  }
-
-  const isDefaultState =
-    pitch.description.trim() === '' &&
-    pitch.expression.trim() === pitch.defaultExpression.trim()
-
-  return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className={`pitch-row${isDragging ? ' is-dragging' : ''}${pitch.locked ? ' is-locked' : ''}`}
-    >
-      <button
-        type="button"
-        className={`pitch-row__indicator${pitch.isBlackKey ? ' black' : ' white'}`}
-        aria-label={`Reorder pitch ${pitch.noteName}`}
-        {...attributes}
-        {...listeners}
-        disabled={pitch.locked}
-      >
-        <span className="sr-only">Drag handle</span>
-      </button>
-
-      <div className="pitch-row__note">
-        <div className="pitch-row__note-name">{pitch.noteName}</div>
-        <div className="pitch-row__note-meta">MIDI {pitch.midiNote}</div>
-      </div>
-
-      <div className="pitch-row__field">
-        <label htmlFor={`pitch-description-${pitch.id}`} className="sr-only">
-          Description for {pitch.noteName}
-        </label>
-        <input
-          id={`pitch-description-${pitch.id}`}
-          type="text"
-          value={pitch.description}
-          onChange={(event) => onChange(pitch.id, { description: event.target.value })}
-        />
-      </div>
-
-      <div className="pitch-row__field">
-        <label htmlFor={`pitch-expression-${pitch.id}`} className="sr-only">
-          Expression for {pitch.noteName}
-        </label>
-        <input
-          id={`pitch-expression-${pitch.id}`}
-          type="text"
-          value={pitch.expression}
-          onChange={(event) => onChange(pitch.id, { expression: event.target.value })}
-          disabled={pitch.locked}
-        />
-      </div>
-
-      <div className="pitch-row__value">{pitch.error ? 'Error' : formatNumber(pitch.resolved)}</div>
-      <div className="pitch-row__value">
-        {pitch.error ? '—' : formatNumber(pitch.normalized)}
-      </div>
-      <div className="pitch-row__value">{formatFrequency(pitch.targetFrequency)}</div>
-      <div className="pitch-row__value">{formatFrequency(pitch.standardFrequency)}</div>
-      <div className="pitch-row__value">{pitch.error ? '—' : formatCents(pitch.centsOffset)}</div>
-      <div className="pitch-row__actions">
-        <button
-          type="button"
-          className="pitch-row__reset"
-          onClick={() => onReset(pitch.position, pitch.defaultExpression)}
-          disabled={isDefaultState}
-        >
-          Reset
-        </button>
-      </div>
+      <AppFooter />
     </div>
   )
 }
 
 export default App
+
