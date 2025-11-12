@@ -8,6 +8,7 @@ import {
 import { arrayMove } from '@dnd-kit/sortable'
 import ThemeToggle from './components/ThemeToggle'
 import IntervalWorkspace from './components/IntervalWorkspace'
+import TemperamentMeta from './components/TemperamentMeta'
 import PitchConfig, { type KeyOption } from './components/PitchConfig'
 import PitchTable from './components/PitchTable'
 import AppFooter from './components/AppFooter'
@@ -48,6 +49,8 @@ function App() {
     createIntervalDefinition({ description: 'Tonic', expression: '1' }),
     createIntervalDefinition({ description: 'Perfect fifth', expression: '3/2' }),
   ])
+  const [temperamentTitle, setTemperamentTitle] = useState<string>('')
+  const [temperamentDescription, setTemperamentDescription] = useState<string>('')
   const [keyRoot, setKeyRoot] = useState<number>(72)
   const [concertPitch, setConcertPitch] = useState<number>(440)
   const [keyFrequency, setKeyFrequency] = useState<number>(() =>
@@ -413,6 +416,13 @@ function App() {
           instruments.
         </p>
       </header>
+
+      <TemperamentMeta
+        title={temperamentTitle}
+        description={temperamentDescription}
+        onTitleChange={setTemperamentTitle}
+        onDescriptionChange={setTemperamentDescription}
+      />
 
       <IntervalWorkspace
         intervals={computedIntervals}

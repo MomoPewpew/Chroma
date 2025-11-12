@@ -91,6 +91,59 @@
   line-height: 1.6;
 }
 
+.temperament-meta {
+  border: 1px solid color-mix(in srgb, var(--surface-border) 45%, transparent);
+  border-radius: 16px;
+  padding: 1.35rem 1.5rem;
+  display: grid;
+  gap: 1.1rem;
+  background: var(--surface);
+  box-shadow: 0 20px 40px -36px rgba(15, 23, 42, 0.6);
+}
+
+.temperament-meta__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.temperament-meta__field label {
+  font-weight: 600;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+.temperament-meta__field input,
+.temperament-meta__field textarea {
+  border-radius: 12px;
+  border: 1px solid var(--input-border);
+  background: var(--input-background);
+  color: var(--input-text);
+  padding: 0.55rem 0.75rem;
+  font-size: 0.95rem;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+  resize: vertical;
+}
+
+.temperament-meta__field textarea {
+  min-height: 2.45rem;
+  line-height: 1.45;
+  overflow-y: hidden;
+  resize: none;
+}
+
+.temperament-meta__field input::placeholder,
+.temperament-meta__field textarea::placeholder {
+  color: var(--input-placeholder);
+}
+
+.temperament-meta__field input:focus,
+.temperament-meta__field textarea:focus {
+  outline: none;
+  border-color: color-mix(in srgb, var(--accent) 60%, transparent);
+  box-shadow: 0 0 0 3px var(--focus-ring);
+}
+
 .interval-tool {
   border: 1px solid color-mix(in srgb, var(--surface-border) 60%, transparent);
   border-radius: 18px;
