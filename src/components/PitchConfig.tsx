@@ -7,8 +7,6 @@ type PitchConfigProps = {
   keyRoot: number
   concertPitch: number
   keyFrequency: number
-  rangeStartLabel: string
-  rangeEndLabel: string
   keyOptions: KeyOption[]
   onKeyChange: (value: string) => void
   onConcertPitchChange: (value: string) => void
@@ -19,8 +17,6 @@ const PitchConfig = ({
   keyRoot,
   concertPitch,
   keyFrequency,
-  rangeStartLabel,
-  rangeEndLabel,
   keyOptions,
   onKeyChange,
   onConcertPitchChange,

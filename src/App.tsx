@@ -16,7 +16,6 @@ import {
   MAX_KEY_NOTE,
   MIN_KEY_NOTE,
   OCTAVE_EPSILON,
-  TOTAL_PITCHES,
   createIntervalDefinition,
   deriveBaseFrequency,
   getDefaultExpression,
@@ -436,11 +435,6 @@ function App() {
     [],
   )
 
-  const rangeStartLabel = `${getNoteName(keyRoot)} (MIDI ${keyRoot})`
-  const rangeEndLabel = `${getNoteName(keyRoot + TOTAL_PITCHES - 1)} (MIDI ${
-    keyRoot + TOTAL_PITCHES - 1
-  })`
-
   const handleIntervalDragEnd = (event: DragEndEvent) => {
     const { active, over } = event
     if (!over || active.id === over.id) {
@@ -563,8 +557,6 @@ function App() {
         concertPitch={concertPitch}
         keyFrequency={keyFrequency}
         keyOptions={keyOptions}
-        rangeStartLabel={rangeStartLabel}
-        rangeEndLabel={rangeEndLabel}
         onKeyChange={handleKeyChange}
         onConcertPitchChange={handleConcertPitchChange}
         onKeyFrequencyChange={handleKeyFrequencyChange}
