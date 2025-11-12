@@ -1,0 +1,125 @@
+{
+  "schema": "chroma-temperament",
+  "version": 1,
+  "metadata": {
+    "title": "Just Intonation in C",
+    "description": "Classic just intonation mapped to the C5–B5 octave.\nUses reciprocal thirds for the minor accidentals, to allow for limited modulation capabilities in as many directions as possible."
+  },
+  "config": {
+    "keyRoot": 72,
+    "concertPitch": 440,
+    "keyFrequency": 523.251
+  },
+  "intervals": [
+    {
+      "description": "Tonic",
+      "expression": "1",
+      "disabled": false
+    },
+    {
+      "description": "Major second",
+      "expression": "3*3",
+      "disabled": false
+    },
+    {
+      "description": "Major third",
+      "expression": "5",
+      "disabled": false
+    },
+    {
+      "description": "Perfect fourth",
+      "expression": "1/3",
+      "disabled": false
+    },
+    {
+      "description": "Perfect fifth",
+      "expression": "3",
+      "disabled": false
+    },
+    {
+      "description": "Major sixth",
+      "expression": "5/3",
+      "disabled": false
+    },
+    {
+      "description": "Major seventh",
+      "expression": "3*5",
+      "disabled": false
+    },
+    {
+      "description": "Minor third",
+      "expression": "3/5",
+      "disabled": false
+    },
+    {
+      "description": "Minor sixth",
+      "expression": "1/5",
+      "disabled": false
+    },
+    {
+      "description": "Minor seventh",
+      "expression": "3*3/5",
+      "disabled": false
+    },
+    {
+      "description": "Augmented fourth",
+      "expression": "3*3*5",
+      "disabled": false
+    },
+    {
+      "description": "Minor second",
+      "expression": "1/3/5",
+      "disabled": false
+    }
+  ],
+  "pitches": [
+    {
+      "description": "",
+      "expression": "1"
+    },
+    {
+      "description": "Minor second",
+      "expression": "1/3/5"
+    },
+    {
+      "description": "Major second",
+      "expression": "3*3"
+    },
+    {
+      "description": "Minor third",
+      "expression": "3/5"
+    },
+    {
+      "description": "Major third",
+      "expression": "5"
+    },
+    {
+      "description": "Perfect fourth",
+      "expression": "1/3"
+    },
+    {
+      "description": "Augmented fourth",
+      "expression": "3*3*5"
+    },
+    {
+      "description": "Perfect fifth",
+      "expression": "3"
+    },
+    {
+      "description": "Minor sixth",
+      "expression": "1/5"
+    },
+    {
+      "description": "Major sixth",
+      "expression": "5/3"
+    },
+    {
+      "description": "Minor seventh",
+      "expression": "3*3/5"
+    },
+    {
+      "description": "Major seventh",
+      "expression": "3*5"
+    }
+  ]
+}

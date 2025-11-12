@@ -1,0 +1,125 @@
+{
+  "schema": "chroma-temperament",
+  "version": 1,
+  "metadata": {
+    "title": "Pythagorean Cycle",
+    "description": "Twelve-tone circle of fifths built on C5 with pure 3/2 ratios.\nUses 6 intervals from the overtonal fifths and 5 intervals from the reciprocal fifths, to minimize the total amount of retuning required."
+  },
+  "config": {
+    "keyRoot": 72,
+    "concertPitch": 440,
+    "keyFrequency": 523.251
+  },
+  "intervals": [
+    {
+      "description": "Tonic",
+      "expression": "(3/2)^0",
+      "disabled": false
+    },
+    {
+      "description": "Perfect fifth",
+      "expression": "(3/2)^1",
+      "disabled": false
+    },
+    {
+      "description": "Major second",
+      "expression": "(3/2)^2",
+      "disabled": false
+    },
+    {
+      "description": "Major sixth",
+      "expression": "(3/2)^3",
+      "disabled": false
+    },
+    {
+      "description": "Major third",
+      "expression": "(3/2)^4",
+      "disabled": false
+    },
+    {
+      "description": "Major seventh",
+      "expression": "(3/2)^5",
+      "disabled": false
+    },
+    {
+      "description": "Augmented fourth",
+      "expression": "(3/2)^6",
+      "disabled": false
+    },
+    {
+      "description": "Perfect fourth",
+      "expression": "(3/2)^-1",
+      "disabled": false
+    },
+    {
+      "description": "Minor seventh",
+      "expression": "(3/2)^-2",
+      "disabled": false
+    },
+    {
+      "description": "Minor third",
+      "expression": "(3/2)^-3",
+      "disabled": false
+    },
+    {
+      "description": "Minor sixth",
+      "expression": "(3/2)^-4",
+      "disabled": false
+    },
+    {
+      "description": "Minor second",
+      "expression": "(3/2)^-5",
+      "disabled": false
+    }
+  ],
+  "pitches": [
+    {
+      "description": "",
+      "expression": "1"
+    },
+    {
+      "description": "Minor second",
+      "expression": "(3/2)^-5"
+    },
+    {
+      "description": "Major second",
+      "expression": "(3/2)^2"
+    },
+    {
+      "description": "Minor third",
+      "expression": "(3/2)^-3"
+    },
+    {
+      "description": "Major third",
+      "expression": "(3/2)^4"
+    },
+    {
+      "description": "Perfect fourth",
+      "expression": "(3/2)^-1"
+    },
+    {
+      "description": "Augmented fourth",
+      "expression": "(3/2)^6"
+    },
+    {
+      "description": "Perfect fifth",
+      "expression": "(3/2)^1"
+    },
+    {
+      "description": "Minor sixth",
+      "expression": "(3/2)^-4"
+    },
+    {
+      "description": "Major sixth",
+      "expression": "(3/2)^3"
+    },
+    {
+      "description": "Minor seventh",
+      "expression": "(3/2)^-2"
+    },
+    {
+      "description": "Major seventh",
+      "expression": "(3/2)^5"
+    }
+  ]
+}

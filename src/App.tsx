@@ -70,9 +70,9 @@ function App() {
 
   const exampleOptions = useMemo(
     () => [
-      { value: 'just-intonation', label: 'Just Intonation in C' },
-      { value: 'pythagorean', label: 'Pythagorean Cycle' },
-      { value: 'meantone-1-4', label: 'Quarter-comma Meantone' },
+      { value: 'just-intonation-in-c', label: 'Just Intonation in C' },
+      { value: 'pythagorean-cycle', label: 'Pythagorean Cycle' },
+      { value: 'quarter-comma-meantone', label: 'Quarter-comma Meantone' },
     ],
     [],
   )
