@@ -69,12 +69,6 @@ const PitchConfig = ({
         <span>Hz</span>
       </div>
     </div>
-
-    <div className="pitch-config__summary">
-      <span>
-        Range: {rangeStartLabel} – {rangeEndLabel}
-      </span>
-    </div>
   </section>
 )
 
